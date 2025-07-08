@@ -1,0 +1,183 @@
+name: Bulk Progressive Capture
+
+on:
+  workflow_dispatch:
+    inputs:
+      repository_id:
+        description: 'Supabase repository ID'
+        required: true
+        type: string
+      repository_name:
+        description: 'Repository name (owner/repo)'
+        required: true
+        type: string
+      capture_types:
+        description: 'Types to capture (comma-separated: pr-details,reviews,comments)'
+        required: false
+        type: string
+        default: 'pr-details,reviews,comments'
+      max_items:
+        description: 'Maximum items to process'
+        required: false
+        type: string
+        default: '100'
+      days_back:
+        description: 'Days to look back'
+        required: false
+        type: string
+        default: '30'
+
+jobs:
+  prepare:
+    runs-on: ubuntu-latest
+    outputs:
+      pr_numbers: ${{ steps.get_prs.outputs.pr_numbers }}
+      capture_matrix: ${{ steps.build_matrix.outputs.matrix }}
+    
+    steps:
+      - name: Generate token
+        id: generate_token
+        uses: actions/create-github-app-token@v1
+        with:
+          app-id: ${{ vars.CONTRIBUTOR_APP_ID }}
+          private-key: ${{ secrets.CONTRIBUTOR_APP_PRIVATE_KEY }}
+          
+      - name: Checkout contributor.info
+        uses: actions/checkout@v4
+        with:
+          repository: bdougie/contributor.info
+          ref: main
+          token: ${{ steps.generate_token.outputs.token }}
+          
+      - name: Setup Node.js
+        uses: actions/setup-node@v4
+        with:
+          node-version: '20'
+          cache: 'npm'
+          cache-dependency-path: scripts/progressive-capture/package-lock.json
+          
+      - name: Install dependencies
+        run: |
+          cd scripts/progressive-capture
+          npm ci
+          
+      - name: Get PRs to process
+        id: get_prs
+        run: |
+          cd scripts/progressive-capture
+          # Query database to get PRs needing processing
+          PR_NUMBERS=$(node -e "
+            const { createClient } = require('@supabase/supabase-js');
+            const supabase = createClient(process.env.SUPABASE_URL, process.env.SUPABASE_SERVICE_KEY);
+            
+            async function getPRs() {
+              const since = new Date();
+              since.setDate(since.getDate() - parseInt(process.env.DAYS_BACK || '30'));
+              
+              const { data: prs } = await supabase
+                .from('pull_requests')
+                .select('number')
+                .eq('repository_id', process.env.REPOSITORY_ID)
+                .gt('created_at', since.toISOString())
+                .order('created_at', { ascending: false })
+                .limit(parseInt(process.env.MAX_ITEMS || '100'));
+              
+              console.log((prs || []).map(pr => pr.number).join(','));
+            }
+            
+            getPRs().catch(console.error);
+          ")
+          echo "pr_numbers=$PR_NUMBERS" >> $GITHUB_OUTPUT
+        env:
+          SUPABASE_URL: ${{ secrets.SUPABASE_URL }}
+          SUPABASE_SERVICE_KEY: ${{ secrets.SUPABASE_SERVICE_KEY }}
+          REPOSITORY_ID: ${{ inputs.repository_id }}
+          DAYS_BACK: ${{ inputs.days_back }}
+          MAX_ITEMS: ${{ inputs.max_items }}
+          
+      - name: Build capture matrix
+        id: build_matrix
+        run: |
+          TYPES="${{ inputs.capture_types }}"
+          MATRIX_JSON=$(echo "$TYPES" | node -e "
+            const types = require('fs').readFileSync(0, 'utf8').trim().split(',');
+            const matrix = {
+              include: types.map(type => ({ type: type.trim() }))
+            };
+            console.log(JSON.stringify(matrix));
+          ")
+          echo "matrix=$MATRIX_JSON" >> $GITHUB_OUTPUT
+
+  capture:
+    needs: prepare
+    if: needs.prepare.outputs.pr_numbers != ''
+    strategy:
+      matrix: ${{ fromJson(needs.prepare.outputs.capture_matrix) }}
+      max-parallel: 3
+      fail-fast: false
+    
+    runs-on: ubuntu-latest
+    timeout-minutes: 60
+    
+    steps:
+      - name: Generate token
+        id: generate_token
+        uses: actions/create-github-app-token@v1
+        with:
+          app-id: ${{ vars.CONTRIBUTOR_APP_ID }}
+          private-key: ${{ secrets.CONTRIBUTOR_APP_PRIVATE_KEY }}
+          
+      - name: Checkout contributor.info
+        uses: actions/checkout@v4
+        with:
+          repository: bdougie/contributor.info
+          ref: main
+          token: ${{ steps.generate_token.outputs.token }}
+          
+      - name: Setup Node.js
+        uses: actions/setup-node@v4
+        with:
+          node-version: '20'
+          cache: 'npm'
+          cache-dependency-path: scripts/progressive-capture/package-lock.json
+          
+      - name: Install dependencies
+        run: |
+          cd scripts/progressive-capture
+          npm ci
+          
+      - name: Run capture for ${{ matrix.type }}
+        run: |
+          cd scripts/progressive-capture
+          case "${{ matrix.type }}" in
+            "pr-details")
+              node capture-pr-details.js
+              ;;
+            "reviews")
+              node capture-pr-reviews.js
+              ;;
+            "comments")
+              node capture-pr-comments.js
+              ;;
+            *)
+              echo "Unknown capture type: ${{ matrix.type }}"
+              exit 1
+              ;;
+          esac
+        env:
+          GITHUB_TOKEN: ${{ steps.generate_token.outputs.token }}
+          SUPABASE_URL: ${{ secrets.SUPABASE_URL }}
+          SUPABASE_SERVICE_KEY: ${{ secrets.SUPABASE_SERVICE_KEY }}
+          REPOSITORY_ID: ${{ inputs.repository_id }}
+          REPOSITORY_NAME: ${{ inputs.repository_name }}
+          PR_NUMBERS: ${{ needs.prepare.outputs.pr_numbers }}
+          TIME_RANGE: ${{ inputs.days_back }}
+          JOB_ID: ${{ github.run_id }}-${{ github.run_number }}-${{ matrix.type }}
+          
+      - name: Upload logs
+        if: always()
+        uses: actions/upload-artifact@v3
+        with:
+          name: bulk-${{ matrix.type }}-logs-${{ github.run_id }}
+          path: scripts/progressive-capture/logs/
+          retention-days: 7

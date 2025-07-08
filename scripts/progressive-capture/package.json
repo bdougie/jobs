@@ -1,0 +1,30 @@
+{
+  "name": "progressive-capture-scripts",
+  "version": "1.0.0",
+  "description": "CLI scripts for progressive data capture using GitHub Actions",
+  "main": "index.js",
+  "type": "module",
+  "scripts": {
+    "test": "echo \"Error: no test specified\" && exit 1"
+  },
+  "keywords": [
+    "github",
+    "api",
+    "progressive",
+    "capture",
+    "actions",
+    "supabase"
+  ],
+  "author": "Brian Douglas",
+  "license": "MIT",
+  "dependencies": {
+    "@octokit/rest": "^20.0.2",
+    "@octokit/graphql": "^7.0.2",
+    "@octokit/graphql-schema": "^14.0.0",
+    "@supabase/supabase-js": "^2.39.1",
+    "dotenv": "^16.3.1"
+  },
+  "engines": {
+    "node": ">=20.0.0"
+  }
+}

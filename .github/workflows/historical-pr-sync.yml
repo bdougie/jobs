@@ -1,0 +1,76 @@
+name: Historical PR Sync
+
+on:
+  workflow_dispatch:
+    inputs:
+      repository_id:
+        description: 'Repository ID'
+        required: true
+        type: string
+      repository_name:
+        description: 'Repository name (owner/repo)'
+        required: true
+        type: string
+      days_back:
+        description: 'Days to look back (default: 30)'
+        required: false
+        type: string
+        default: '30'
+      max_items:
+        description: 'Maximum PRs to process'
+        required: false
+        type: string
+        default: '1000'
+
+jobs:
+  sync-historical-prs:
+    runs-on: ubuntu-latest
+    timeout-minutes: 120
+    
+    steps:
+      - name: Generate GitHub App token
+        id: app-token
+        uses: actions/create-github-app-token@v1
+        with:
+          app-id: ${{ vars.CONTRIBUTOR_APP_ID }}
+          private-key: ${{ secrets.CONTRIBUTOR_APP_PRIVATE_KEY }}
+          
+      - name: Checkout main repository
+        uses: actions/checkout@v4
+        with:
+          repository: bdougie/contributor.info
+          token: ${{ steps.app-token.outputs.token }}
+          
+      - name: Setup Node.js
+        uses: actions/setup-node@v4
+        with:
+          node-version: '20'
+          cache: 'npm'
+          cache-dependency-path: scripts/progressive-capture/package-lock.json
+          
+      - name: Install dependencies
+        run: |
+          cd scripts/progressive-capture
+          npm ci
+          
+      - name: Run historical PR sync
+        run: |
+          cd scripts/progressive-capture
+          node historical-pr-sync.js
+        env:
+          GITHUB_TOKEN: ${{ steps.app-token.outputs.token }}
+          SUPABASE_URL: ${{ secrets.SUPABASE_URL }}
+          SUPABASE_SERVICE_KEY: ${{ secrets.SUPABASE_SERVICE_KEY }}
+          REPOSITORY_ID: ${{ inputs.repository_id }}
+          REPOSITORY_NAME: ${{ inputs.repository_name }}
+          DAYS_BACK: ${{ inputs.days_back }}
+          MAX_ITEMS: ${{ inputs.max_items }}
+          JOB_ID: ${{ github.run_id }}
+          
+      - name: Upload logs
+        if: always()
+        uses: actions/upload-artifact@v3
+        with:
+          name: historical-sync-logs-${{ github.run_id }}
+          path: scripts/progressive-capture/logs/
+          retention-days: 7

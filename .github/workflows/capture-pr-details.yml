@@ -1,0 +1,83 @@
+name: Capture PR Details
+
+on:
+  workflow_dispatch:
+    inputs:
+      repository_id:
+        description: 'Supabase repository ID'
+        required: true
+        type: string
+      repository_name:
+        description: 'Repository name (owner/repo)'
+        required: true
+        type: string
+      pr_numbers:
+        description: 'Comma-separated PR numbers to capture'
+        required: true
+        type: string
+      time_range:
+        description: 'Time range in days (for sync mode)'
+        required: false
+        type: string
+        default: '30'
+
+jobs:
+  capture-pr-details:
+    runs-on: ubuntu-latest
+    timeout-minutes: 30
+    
+    steps:
+      # Create GitHub App token for API access
+      - name: Generate token
+        id: generate_token
+        uses: actions/create-github-app-token@v1
+        with:
+          app-id: ${{ vars.CONTRIBUTOR_APP_ID }}
+          private-key: ${{ secrets.CONTRIBUTOR_APP_PRIVATE_KEY }}
+          owner: ${{ github.repository_owner }}
+          
+      # Checkout main repository with scripts
+      - name: Checkout contributor.info
+        uses: actions/checkout@v4
+        with:
+          repository: bdougie/contributor.info
+          ref: main
+          token: ${{ steps.generate_token.outputs.token }}
+          
+      # Setup Node.js environment
+      - name: Setup Node.js
+        uses: actions/setup-node@v4
+        with:
+          node-version: '20'
+          cache: 'npm'
+          cache-dependency-path: scripts/progressive-capture/package-lock.json
+          
+      # Install dependencies
+      - name: Install dependencies
+        run: |
+          cd scripts/progressive-capture
+          npm ci
+          
+      # Run capture script
+      - name: Capture PR Details
+        run: |
+          cd scripts/progressive-capture
+          node capture-pr-details.js
+        env:
+          GITHUB_TOKEN: ${{ steps.generate_token.outputs.token }}
+          SUPABASE_URL: ${{ secrets.SUPABASE_URL }}
+          SUPABASE_SERVICE_KEY: ${{ secrets.SUPABASE_SERVICE_KEY }}
+          REPOSITORY_ID: ${{ inputs.repository_id }}
+          REPOSITORY_NAME: ${{ inputs.repository_name }}
+          PR_NUMBERS: ${{ inputs.pr_numbers }}
+          TIME_RANGE: ${{ inputs.time_range }}
+          JOB_ID: ${{ github.run_id }}-${{ github.run_number }}
+          
+      # Upload logs as artifact for debugging
+      - name: Upload logs
+        if: always()
+        uses: actions/upload-artifact@v3
+        with:
+          name: capture-logs-${{ github.run_id }}
+          path: scripts/progressive-capture/logs/
+          retention-days: 7
