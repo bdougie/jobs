@@ -1,6 +1,8 @@
 name: Bulk Progressive Capture
 
 on:
+  repository_dispatch:
+    types: [bulk-capture]
   workflow_dispatch:
     inputs:
       repository_id:
@@ -91,14 +93,14 @@ jobs:
         env:
           SUPABASE_URL: ${{ secrets.SUPABASE_URL }}
           SUPABASE_SERVICE_KEY: ${{ secrets.SUPABASE_SERVICE_KEY }}
-          REPOSITORY_ID: ${{ inputs.repository_id }}
-          DAYS_BACK: ${{ inputs.days_back }}
-          MAX_ITEMS: ${{ inputs.max_items }}
+          REPOSITORY_ID: ${{ inputs.repository_id || github.event.client_payload.repository_id }}
+          DAYS_BACK: ${{ inputs.days_back || github.event.client_payload.days_back || '30' }}
+          MAX_ITEMS: ${{ inputs.max_items || github.event.client_payload.max_items || '100' }}
           
       - name: Build capture matrix
         id: build_matrix
         run: |
-          TYPES="${{ inputs.capture_types }}"
+          TYPES="${{ inputs.capture_types || github.event.client_payload.capture_types || 'pr-details,reviews,comments' }}"
           MATRIX_JSON=$(echo "$TYPES" | node -e "
             const types = require('fs').readFileSync(0, 'utf8').trim().split(',');
             const matrix = {
@@ -168,10 +170,10 @@ jobs:
           GITHUB_TOKEN: ${{ steps.generate_token.outputs.token }}
           SUPABASE_URL: ${{ secrets.SUPABASE_URL }}
           SUPABASE_SERVICE_KEY: ${{ secrets.SUPABASE_SERVICE_KEY }}
-          REPOSITORY_ID: ${{ inputs.repository_id }}
-          REPOSITORY_NAME: ${{ inputs.repository_name }}
+          REPOSITORY_ID: ${{ inputs.repository_id || github.event.client_payload.repository_id }}
+          REPOSITORY_NAME: ${{ inputs.repository_name || github.event.client_payload.repository_name }}
           PR_NUMBERS: ${{ needs.prepare.outputs.pr_numbers }}
-          TIME_RANGE: ${{ inputs.days_back }}
+          TIME_RANGE: ${{ inputs.days_back || github.event.client_payload.days_back || '30' }}
           JOB_ID: ${{ github.run_id }}-${{ github.run_number }}-${{ matrix.type }}
           
       - name: Upload logs

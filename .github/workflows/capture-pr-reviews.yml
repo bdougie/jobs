@@ -1,6 +1,8 @@
 name: Capture PR Reviews
 
 on:
+  repository_dispatch:
+    types: [capture-pr-reviews]
   workflow_dispatch:
     inputs:
       repository_id:
@@ -62,10 +64,10 @@ jobs:
           GITHUB_TOKEN: ${{ steps.generate_token.outputs.token }}
           SUPABASE_URL: ${{ secrets.SUPABASE_URL }}
           SUPABASE_SERVICE_KEY: ${{ secrets.SUPABASE_SERVICE_KEY }}
-          REPOSITORY_ID: ${{ inputs.repository_id }}
-          REPOSITORY_NAME: ${{ inputs.repository_name }}
-          PR_NUMBERS: ${{ inputs.pr_numbers }}
-          TIME_RANGE: ${{ inputs.time_range }}
+          REPOSITORY_ID: ${{ inputs.repository_id || github.event.client_payload.repository_id }}
+          REPOSITORY_NAME: ${{ inputs.repository_name || github.event.client_payload.repository_name }}
+          PR_NUMBERS: ${{ inputs.pr_numbers || github.event.client_payload.pr_numbers }}
+          TIME_RANGE: ${{ inputs.time_range || github.event.client_payload.time_range || '30' }}
           JOB_ID: ${{ github.run_id }}-${{ github.run_number }}
           
       - name: Upload logs

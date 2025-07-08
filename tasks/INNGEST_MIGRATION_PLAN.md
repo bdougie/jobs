@@ -70,7 +70,7 @@ GitHub Actions-based system following the hearts/jobs pattern:
 - [ ] Conditional execution based on data freshness
 
 #### 2.3 Testing Workflows
-- [ ] Test workflow dispatch API
+- [ ] Test repository dispatch API
 - [ ] Verify secret access and authentication
 - [ ] Test CLI script execution in GitHub Actions environment
 
@@ -112,7 +112,7 @@ CREATE TABLE progressive_capture_progress (
 
 #### 4.1 GitHub Actions Client
 - [ ] Create `src/lib/progressive-capture/github-actions-client.ts`
-- [ ] Implement workflow dispatch functionality
+- [ ] Implement repository dispatch functionality
 - [ ] Add workflow status monitoring
 
 #### 4.2 Queue Manager Replacement

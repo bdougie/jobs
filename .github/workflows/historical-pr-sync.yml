@@ -1,6 +1,8 @@
 name: Historical PR Sync
 
 on:
+  repository_dispatch:
+    types: [historical-pr-sync]
   workflow_dispatch:
     inputs:
       repository_id:
@@ -61,10 +63,10 @@ jobs:
           GITHUB_TOKEN: ${{ steps.app-token.outputs.token }}
           SUPABASE_URL: ${{ secrets.SUPABASE_URL }}
           SUPABASE_SERVICE_KEY: ${{ secrets.SUPABASE_SERVICE_KEY }}
-          REPOSITORY_ID: ${{ inputs.repository_id }}
-          REPOSITORY_NAME: ${{ inputs.repository_name }}
-          DAYS_BACK: ${{ inputs.days_back }}
-          MAX_ITEMS: ${{ inputs.max_items }}
+          REPOSITORY_ID: ${{ inputs.repository_id || github.event.client_payload.repository_id }}
+          REPOSITORY_NAME: ${{ inputs.repository_name || github.event.client_payload.repository_name }}
+          DAYS_BACK: ${{ inputs.days_back || github.event.client_payload.days_back || '30' }}
+          MAX_ITEMS: ${{ inputs.max_items || github.event.client_payload.max_items || '1000' }}
           JOB_ID: ${{ github.run_id }}
           
       - name: Upload logs
