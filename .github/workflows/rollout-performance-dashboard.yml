@@ -2,8 +2,8 @@ name: Rollout Performance Dashboard
 
 on:
   schedule:
-    # Generate daily performance reports
-    - cron: '0 8 * * *'  # 8 AM UTC daily
+    # Generate daily performance reports (offset to avoid queue congestion)
+    - cron: '27 8 * * *'  # 8:27 AM UTC daily
   workflow_dispatch:
     inputs:
       report_type:

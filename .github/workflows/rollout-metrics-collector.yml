@@ -2,8 +2,8 @@ name: Rollout Metrics Collector
 
 on:
   schedule:
-    # Run every hour to collect and aggregate metrics
-    - cron: '0 * * * *'
+    # Run every hour to collect and aggregate metrics (offset to avoid queue congestion)
+    - cron: '33 * * * *'
   workflow_dispatch:
     inputs:
       time_window:
