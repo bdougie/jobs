@@ -28,13 +28,13 @@
   function getAlertStyles(type: Alert['type']) {
     switch (type) {
       case 'error':
-        return 'bg-red-50 border-red-200 text-red-800';
+        return 'bg-red-50 border-border text-red-800';
       case 'warning':
-        return 'bg-yellow-50 border-yellow-200 text-yellow-800';
+        return 'bg-yellow-50 border-border text-yellow-800';
       case 'info':
-        return 'bg-blue-50 border-blue-200 text-blue-800';
+        return 'bg-blue-50 border-border text-blue-800';
       default:
-        return 'bg-gray-50 border-gray-200 text-gray-800';
+        return 'bg-gray-50 border-border text-gray-800';
     }
   }
 
@@ -60,7 +60,7 @@
   }
 </script>
 
-<div class="card">
+<div class="card border-border">
   <div class="card-header">
     <div class="flex items-center justify-between">
       <h3 class="text-lg font-semibold text-foreground">System Alerts</h3>
@@ -82,7 +82,7 @@
     {:else}
       <div class="space-y-3">
         {#each $activeAlerts as alert (alert.id)}
-          <div class="rounded-md border p-4 {getAlertStyles(alert.type)}">
+          <div class="rounded-md border border-border p-4 {getAlertStyles(alert.type)}">
             <div class="flex">
               <div class="flex-shrink-0">
                 <svg class="h-5 w-5 {getIconStyles(alert.type)}" fill="none" stroke="currentColor" viewBox="0 0 24 24">
