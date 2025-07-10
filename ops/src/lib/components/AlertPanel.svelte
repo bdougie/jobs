@@ -105,6 +105,7 @@
                   on:click={() => dismissAlert(alert.id)}
                   class="inline-flex text-sm opacity-75 hover:opacity-100 transition-opacity"
                   title="Dismiss alert"
+                  aria-label="Dismiss alert"
                 >
                   <svg class="h-4 w-4" fill="none" stroke="currentColor" viewBox="0 0 24 24">
                     <path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M6 18L18 6M6 6l12 12"/>

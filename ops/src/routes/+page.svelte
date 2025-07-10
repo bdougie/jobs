@@ -153,10 +153,10 @@
             type="button"
             class="inline-flex h-5 w-9 shrink-0 cursor-pointer items-center rounded-full border-2 border-transparent shadow-sm transition-colors focus-visible:outline-none focus-visible:ring-2 focus-visible:ring-ring focus-visible:ring-offset-2 disabled:cursor-not-allowed disabled:opacity-50 {autoRefresh ? 'bg-primary' : 'bg-input'}"
             on:click={toggleAutoRefresh}
+            aria-label="Toggle auto-refresh"
           >
             <span class="sr-only">Auto-refresh toggle</span>
-            <span class="pointer-events-none block h-4 w-4 rounded-full bg-background shadow-lg ring-0 transition-transform {autoRefresh ? 'translate-x-4' : 'translate-x-0'}">
-            </span>
+            <span class="pointer-events-none block h-4 w-4 rounded-full bg-background shadow-lg ring-0 transition-transform {autoRefresh ? 'translate-x-4' : 'translate-x-0'}"></span>
           </button>
         </div>
 
@@ -166,6 +166,7 @@
           class="p-2 rounded-md border border-border bg-background hover:bg-accent transition-colors"
           disabled={$isLoading}
           title="Refresh metrics"
+          aria-label="Refresh metrics"
         >
           <svg class="w-4 h-4 text-foreground {$isLoading ? 'animate-spin' : ''}" fill="none" stroke="currentColor" viewBox="0 0 24 24">
             <path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M4 4v5h.582m15.356 2A8.001 8.001 0 004.582 9m0 0H9m11 11v-5h-.581m0 0a8.003 8.003 0 01-15.357-2m15.357 2H15"/>
