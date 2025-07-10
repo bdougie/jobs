@@ -83,10 +83,13 @@
       <h3 class="text-lg font-semibold text-foreground">Recent Jobs</h3>
       <button 
         on:click={fetchRecentJobs}
-        class="btn-secondary text-sm"
+        class="p-2 rounded-md border border-border bg-background hover:bg-accent transition-colors"
         disabled={loading}
+        title="Refresh recent jobs"
       >
-        {loading ? 'Refreshing...' : 'Refresh'}
+        <svg class="w-4 h-4 text-foreground {loading ? 'animate-spin' : ''}" fill="none" stroke="currentColor" viewBox="0 0 24 24">
+          <path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M4 4v5h.582m15.356 2A8.001 8.001 0 004.582 9m0 0H9m11 11v-5h-.581m0 0a8.003 8.003 0 01-15.357-2m15.357 2H15"/>
+        </svg>
       </button>
     </div>
   </div>
