@@ -68,6 +68,8 @@ And the following variables:
 
 The actual capture scripts are located in the main `bdougie/contributor.info` repository under `scripts/progressive-capture/`. The workflows checkout this repository and execute the appropriate scripts.
 
+**Note**: Scripts have been moved to the main repository to avoid dependency duplication and use the main project's packages.
+
 ## Monitoring
 
 - **Logs**: All workflows upload logs as artifacts for debugging
