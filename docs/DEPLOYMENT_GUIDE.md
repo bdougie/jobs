@@ -21,8 +21,8 @@ The progressive capture scripts need to be copied from this jobs repository to t
 mkdir -p scripts/progressive-capture/lib
 
 # Copy the scripts
-cp /path/to/jobs/scripts/progressive-capture/* scripts/progressive-capture/
-cp /path/to/jobs/scripts/progressive-capture/lib/* scripts/progressive-capture/lib/
+cp ~/code/jobs/scripts/progressive-capture/* scripts/progressive-capture/
+cp ~/code/jobs/scripts/progressive-capture/lib/* scripts/progressive-capture/lib/
 ```
 
 ## Step 2: Install Dependencies
@@ -30,7 +30,7 @@ cp /path/to/jobs/scripts/progressive-capture/lib/* scripts/progressive-capture/l
 In the `bdougie/contributor.info` repository:
 
 ```bash
-cd scripts/progressive-capture
+# Install dependencies from the main package.json
 npm install
 ```
 

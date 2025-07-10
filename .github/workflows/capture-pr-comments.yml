@@ -49,11 +49,11 @@ jobs:
         with:
           node-version: '20'
           cache: 'npm'
-          cache-dependency-path: scripts/progressive-capture/package-lock.json
+          cache-dependency-path: package-lock.json
           
       - name: Install dependencies
         run: |
-          cd scripts/progressive-capture
+          
           npm ci
           
       - name: Capture PR Comments
@@ -72,7 +72,7 @@ jobs:
           
       - name: Upload logs
         if: always()
-        uses: actions/upload-artifact@v3
+        uses: actions/upload-artifact@v4
         with:
           name: comments-logs-${{ github.run_id }}
           path: scripts/progressive-capture/logs/
