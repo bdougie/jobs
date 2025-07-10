@@ -1,6 +1,6 @@
 <script lang="ts">
   import { onMount, onDestroy } from 'svelte';
-  import { metricsStore, updateMetrics, setError, setLoading } from '$lib/stores/metrics.js';
+  import { metricsStore, isLoading, updateMetrics, setError, setLoading } from '$lib/stores/metrics.js';
   import MetricsCard from '$lib/components/MetricsCard.svelte';
   import AlertPanel from '$lib/components/AlertPanel.svelte';
   import RecentJobs from '$lib/components/RecentJobs.svelte';
@@ -164,10 +164,10 @@
         <button 
           on:click={handleRefreshMetrics}
           class="p-2 rounded-md border border-border bg-background hover:bg-accent transition-colors"
-          disabled={$metricsStore.loading}
+          disabled={$isLoading}
           title="Refresh metrics"
         >
-          <svg class="w-4 h-4 text-foreground {$metricsStore.loading ? 'animate-spin' : ''}" fill="none" stroke="currentColor" viewBox="0 0 24 24">
+          <svg class="w-4 h-4 text-foreground {$isLoading ? 'animate-spin' : ''}" fill="none" stroke="currentColor" viewBox="0 0 24 24">
             <path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M4 4v5h.582m15.356 2A8.001 8.001 0 004.582 9m0 0H9m11 11v-5h-.581m0 0a8.003 8.003 0 01-15.357-2m15.357 2H15"/>
           </svg>
         </button>
@@ -198,6 +198,7 @@
         title="Overall System"
         metrics={metrics.total}
         color="blue"
+        loading={$isLoading}
         on:refresh={handleRefreshMetrics}
       />
       
@@ -205,6 +206,7 @@
         title="Inngest Queue"
         metrics={metrics.inngest}
         color="purple"
+        loading={$isLoading}
         on:refresh={handleRefreshMetrics}
       />
       
@@ -212,6 +214,7 @@
         title="GitHub Actions"
         metrics={metrics.github_actions}
         color="green"
+        loading={$isLoading}
         on:refresh={handleRefreshMetrics}
       />
     </div>
