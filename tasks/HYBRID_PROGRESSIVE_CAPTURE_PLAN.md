@@ -258,10 +258,10 @@ jobs:
 
 ### Phase 4: Frontend Integration (Week 3)
 
-#### 4.1 Update Progressive Capture Components
-- [ ] Update UI to show both Inngest and GitHub Actions jobs
-- [ ] Add routing indicators (Real-time vs Bulk processing)
-- [ ] Enhance notifications to distinguish job types
+#### 4.1 Update Progressive Capture Components ✅ COMPLETED
+- [x] Update UI to show both Inngest and GitHub Actions jobs
+- [x] Add routing indicators (Real-time vs Bulk processing)
+- [x] Enhance notifications to distinguish job types
 
 #### 4.2 Status Monitoring
 ```typescript
