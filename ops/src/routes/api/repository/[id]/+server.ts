@@ -1,9 +1,8 @@
 import type { RequestHandler } from './$types';
-import { createClient } from '$lib/supabase';
+import { supabase } from '$lib/supabase';
 import { json, error } from '@sveltejs/kit';
 
 export const GET: RequestHandler = async ({ params }) => {
-  const supabase = createClient();
   const repositoryId = params.id;
 
   try {

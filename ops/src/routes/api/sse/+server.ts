@@ -1,8 +1,7 @@
 import type { RequestHandler } from './$types';
-import { createClient } from '$lib/supabase';
+import { supabase } from '$lib/supabase';
 
 export const GET: RequestHandler = async ({ url }) => {
-  const supabase = createClient();
   
   // Create a readable stream for server-sent events
   const stream = new ReadableStream({
