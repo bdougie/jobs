@@ -1,0 +1,142 @@
+name: Rollout Emergency Rollback
+
+on:
+  workflow_dispatch:
+    inputs:
+      reason:
+        description: 'Reason for emergency rollback'
+        required: true
+        type: string
+      rollback_to:
+        description: 'Rollback percentage (0-100)'
+        default: '0'
+        type: string
+      triggered_by:
+        description: 'Who/what triggered this rollback'
+        default: 'manual'
+        type: string
+      confirm_rollback:
+        description: 'Confirm emergency rollback (type YES)'
+        required: true
+        type: string
+
+jobs:
+  emergency-rollback:
+    runs-on: ubuntu-latest
+    timeout-minutes: 5
+    if: ${{ inputs.confirm_rollback == 'YES' }}
+    
+    steps:
+      - name: Generate GitHub App token
+        id: app-token
+        uses: actions/create-github-app-token@v1
+        with:
+          app-id: ${{ vars.CONTRIBUTOR_APP_ID }}
+          private-key: ${{ secrets.CONTRIBUTOR_APP_PRIVATE_KEY }}
+          
+      - name: Checkout main repository
+        uses: actions/checkout@v4
+        with:
+          repository: bdougie/contributor.info
+          token: ${{ steps.app-token.outputs.token }}
+          
+      - name: Setup Node.js
+        uses: actions/setup-node@v4
+        with:
+          node-version: '20'
+          cache: 'npm'
+          
+      - name: Install dependencies
+        run: npm ci
+        
+      - name: Execute emergency rollback
+        run: node scripts/rollout/emergency-rollback.js
+        env:
+          GITHUB_TOKEN: ${{ steps.app-token.outputs.token }}
+          SUPABASE_URL: ${{ secrets.SUPABASE_URL }}
+          SUPABASE_SERVICE_KEY: ${{ secrets.SUPABASE_SERVICE_KEY }}
+          SENTRY_DSN: ${{ secrets.SENTRY_DSN }}
+          ROLLBACK_PERCENTAGE: ${{ inputs.rollback_to }}
+          ROLLBACK_REASON: ${{ inputs.reason }}
+          TRIGGERED_BY: ${{ inputs.triggered_by }}
+          ENVIRONMENT: 'production'
+          
+      - name: Verify rollback completion
+        run: node scripts/rollout/verify-rollback.js
+        env:
+          SUPABASE_URL: ${{ secrets.SUPABASE_URL }}
+          SUPABASE_SERVICE_KEY: ${{ secrets.SUPABASE_SERVICE_KEY }}
+          EXPECTED_PERCENTAGE: ${{ inputs.rollback_to }}
+          
+      - name: Send emergency alert
+        run: node scripts/rollout/alert-manager.js
+        env:
+          SENTRY_DSN: ${{ secrets.SENTRY_DSN }}
+          SENTRY_AUTH_TOKEN: ${{ secrets.SENTRY_AUTH_TOKEN }}
+          ALERT_TYPE: 'emergency_rollback'
+          ROLLBACK_REASON: ${{ inputs.reason }}
+          TRIGGERED_BY: ${{ inputs.triggered_by }}
+          
+      - name: Create emergency incident issue
+        uses: actions/github-script@v7
+        with:
+          github-token: ${{ steps.app-token.outputs.token }}
+          script: |
+            const { data: issue } = await github.rest.issues.create({
+              owner: 'bdougie',
+              repo: 'contributor.info',
+              title: `🚨 Emergency Rollback Executed - ${new Date().toISOString()}`,
+              body: `## Emergency Rollback Details
+              
+              **Trigger Time**: ${new Date().toISOString()}
+              **Rollback Percentage**: ${context.payload.inputs.rollback_to}%
+              **Reason**: ${context.payload.inputs.reason}
+              **Triggered By**: ${context.payload.inputs.triggered_by}
+              **Workflow Run**: [${context.runNumber}](${context.payload.repository.html_url}/actions/runs/${context.runId})
+              
+              ## Next Steps
+              
+              - [ ] Investigate root cause of the issue
+              - [ ] Review rollout metrics and error logs
+              - [ ] Determine safe rollout percentage for recovery
+              - [ ] Plan gradual re-rollout strategy
+              - [ ] Update monitoring thresholds if needed
+              
+              ## Rollout Status
+              
+              The hybrid progressive capture rollout has been reduced to ${context.payload.inputs.rollback_to}% to ensure system stability.
+              
+              **Impact**: 
+              - Jobs will now route to Inngest-only (safer fallback)
+              - Monitor error rates before increasing rollout percentage
+              - Review logs in Sentry for detailed error analysis
+              
+              ---
+              
+              🤖 Auto-generated incident report`,
+              labels: ['emergency', 'rollback', 'incident', 'ops']
+            });
+            
+            console.log(`Created emergency incident issue: ${issue.html_url}`);
+            
+      - name: Upload rollback report
+        uses: actions/upload-artifact@v4
+        with:
+          name: emergency-rollback-${{ github.run_number }}
+          path: |
+            rollback-report-*.json
+            verification-*.json
+          retention-days: 90
+
+  rollback-confirmation-failed:
+    runs-on: ubuntu-latest
+    if: ${{ inputs.confirm_rollback != 'YES' }}
+    
+    steps:
+      - name: Log confirmation failure
+        run: |
+          echo "❌ Emergency rollback cancelled - confirmation failed"
+          echo "Expected: YES"
+          echo "Received: ${{ inputs.confirm_rollback }}"
+          echo "For emergency rollback, you must type 'YES' exactly"
+          exit 1

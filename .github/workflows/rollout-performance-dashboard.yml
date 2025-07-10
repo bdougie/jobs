@@ -1,0 +1,145 @@
+name: Rollout Performance Dashboard
+
+on:
+  schedule:
+    # Generate daily performance reports (offset to avoid queue congestion)
+    - cron: '27 8 * * *'  # 8:27 AM UTC daily
+  workflow_dispatch:
+    inputs:
+      report_type:
+        description: 'Type of report to generate'
+        default: 'daily'
+        type: choice
+        options:
+          - daily
+          - weekly
+          - monthly
+          - custom
+      time_range:
+        description: 'Custom time range (hours) - only for custom report'
+        default: '24'
+        type: string
+
+jobs:
+  generate-performance-dashboard:
+    runs-on: ubuntu-latest
+    timeout-minutes: 20
+    
+    steps:
+      - name: Generate GitHub App token
+        id: app-token
+        uses: actions/create-github-app-token@v1
+        with:
+          app-id: ${{ vars.CONTRIBUTOR_APP_ID }}
+          private-key: ${{ secrets.CONTRIBUTOR_APP_PRIVATE_KEY }}
+          
+      - name: Checkout main repository
+        uses: actions/checkout@v4
+        with:
+          repository: bdougie/contributor.info
+          token: ${{ steps.app-token.outputs.token }}
+          
+      - name: Setup Node.js
+        uses: actions/setup-node@v4
+        with:
+          node-version: '20'
+          cache: 'npm'
+          
+      - name: Install dependencies
+        run: npm ci
+        
+      - name: Generate performance dashboard
+        run: node scripts/rollout/performance-dashboard.js
+        env:
+          GITHUB_TOKEN: ${{ steps.app-token.outputs.token }}
+          SUPABASE_URL: ${{ secrets.SUPABASE_URL }}
+          SUPABASE_SERVICE_KEY: ${{ secrets.SUPABASE_SERVICE_KEY }}
+          REPORT_TYPE: ${{ inputs.report_type || 'daily' }}
+          TIME_RANGE_HOURS: ${{ inputs.time_range || '24' }}
+          ENVIRONMENT: 'production'
+          
+      - name: Generate cost analysis
+        run: node scripts/rollout/cost-analyzer.js
+        env:
+          SUPABASE_URL: ${{ secrets.SUPABASE_URL }}
+          SUPABASE_SERVICE_KEY: ${{ secrets.SUPABASE_SERVICE_KEY }}
+          REPORT_TYPE: ${{ inputs.report_type || 'daily' }}
+          
+      - name: Upload dashboard artifacts
+        uses: actions/upload-artifact@v4
+        with:
+          name: performance-dashboard-${{ inputs.report_type || 'daily' }}-${{ github.run_number }}
+          path: |
+            dashboard-*.html
+            performance-report-*.json
+            cost-analysis-*.json
+            charts/*.png
+          retention-days: 90
+          
+      - name: Deploy dashboard to GitHub Pages
+        if: github.event_name == 'schedule' || inputs.report_type == 'daily'
+        uses: peaceiris/actions-gh-pages@v3
+        with:
+          github_token: ${{ steps.app-token.outputs.token }}
+          publish_dir: ./dashboard-output
+          destination_dir: rollout-dashboard
+          
+      - name: Post daily summary
+        if: github.event_name == 'schedule'
+        uses: actions/github-script@v7
+        with:
+          github-token: ${{ steps.app-token.outputs.token }}
+          script: |
+            const fs = require('fs');
+            const summaryPath = './performance-summary-daily.json';
+            
+            if (fs.existsSync(summaryPath)) {
+              const summary = JSON.parse(fs.readFileSync(summaryPath, 'utf8'));
+              
+              const report = `## 📊 Daily Rollout Performance Summary
+              
+              **Date**: ${summary.date}
+              **Rollout Percentage**: ${summary.rolloutPercentage}%
+              
+              ### Performance Metrics
+              - **Total Jobs**: ${summary.totalJobs.toLocaleString()}
+              - **Success Rate**: ${summary.successRate}%
+              - **Average Processing Time**: ${summary.avgProcessingTime}ms
+              - **Error Rate**: ${summary.errorRate}% ${summary.errorRate > 5 ? '⚠️' : '✅'}
+              
+              ### Processor Distribution
+              - **Inngest Jobs**: ${summary.inngestJobs} (${summary.inngestPercentage}%)
+              - **GitHub Actions Jobs**: ${summary.actionsJobs} (${summary.actionsPercentage}%)
+              
+              ### Cost Impact
+              - **Estimated Savings**: ${summary.costSavings}%
+              - **Processing Efficiency**: ${summary.processingEfficiency}%
+              
+              ### Repository Categories
+              ${Object.entries(summary.categoryBreakdown).map(([cat, count]) => 
+                `- **${cat}**: ${count} repositories`
+              ).join('\n')}
+              
+              ### Health Status
+              ${summary.healthStatus === 'healthy' ? '✅ System Healthy' : 
+                summary.healthStatus === 'warning' ? '⚠️ Warning - Monitor Closely' : 
+                '🚨 Critical - Investigation Required'}
+              
+              **Dashboard**: [View Full Report](https://bdougie.github.io/contributor.info/rollout-dashboard/)
+              
+              ---
+              *Generated automatically by Rollout Performance Dashboard*`;
+              
+              console.log('Daily performance summary generated');
+              console.log(report);
+              
+              // Could post to Slack, Discord, or create a discussion here
+            }
+            
+      - name: Alert on performance degradation
+        if: failure()
+        run: node scripts/rollout/alert-manager.js
+        env:
+          SENTRY_DSN: ${{ secrets.SENTRY_DSN }}
+          ALERT_TYPE: 'dashboard_generation_failed'
+          ENVIRONMENT: 'production'
