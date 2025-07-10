@@ -77,7 +77,7 @@
   }
 </script>
 
-<div class="card">
+<div class="card border-border">
   <div class="card-header">
     <div class="flex items-center justify-between">
       <h3 class="text-lg font-semibold text-foreground">Recent Jobs</h3>
@@ -122,7 +122,7 @@
       </div>
     {:else}
       <div class="overflow-x-auto">
-        <table class="min-w-full divide-y divide-gray-200">
+        <table class="min-w-full divide-y divide-border">
           <thead class="bg-muted">
             <tr>
               <th class="px-3 py-2 text-left text-xs font-medium text-muted-foreground uppercase tracking-wider">Job</th>
