@@ -61,10 +61,12 @@ jobs:
           
       - name: Trigger emergency rollback if needed
         if: failure()
-        uses: ./.github/workflows/rollout-emergency-rollback.yml
-        with:
-          reason: 'Health monitor detected critical issues'
-          triggered_by: 'automated_health_check'
+        run: |
+          gh workflow run rollout-emergency-rollback.yml \
+            -f reason="Health monitor detected critical issues" \
+            -f triggered_by="automated_health_check"
+        env:
+          GH_TOKEN: ${{ steps.app-token.outputs.token }}
           
       - name: Upload health report
         if: always()
