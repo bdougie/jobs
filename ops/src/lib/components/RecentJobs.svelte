@@ -72,7 +72,7 @@
   }
 
   function truncateError(error: string | null, maxLength = 50) {
-    if (!error) return '-';
+    if (!error || typeof error !== 'string') return '-';
     return error.length > maxLength ? error.substring(0, maxLength) + '...' : error;
   }
 </script>
