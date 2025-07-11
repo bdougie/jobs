@@ -46,7 +46,7 @@ export const GET: RequestHandler = async ({ url }) => {
             .order('created_at', { ascending: false })
             .limit(100);
             
-          if (!error && jobs) {
+          if (!error && jobs && Array.isArray(jobs)) {
             // Calculate metrics
             const total = {
               pending: jobs.filter(j => j.status === 'pending').length,
