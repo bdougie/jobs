@@ -45,7 +45,7 @@ const report = {
 };
 
 // Save report
-const reportPath = path.join(__dirname, '../../rollback-report.json');
+const reportPath = path.join(__dirname, `../../rollback-report-${Date.now()}.json`);
 fs.writeFileSync(reportPath, JSON.stringify(report, null, 2));
 
 console.log('\n✅ Rollback completed successfully!');
