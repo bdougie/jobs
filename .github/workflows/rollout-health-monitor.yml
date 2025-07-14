@@ -50,7 +50,8 @@ jobs:
         working-directory: ./scripts
         
       - name: Run rollout health check
-        run: node scripts/rollout/health-checker.js
+        run: node rollout/health-checker.js
+        working-directory: ./scripts
         env:
           GITHUB_TOKEN: ${{ steps.app-token.outputs.token }}
           SUPABASE_URL: ${{ secrets.SUPABASE_URL }}
