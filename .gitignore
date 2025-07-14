@@ -100,3 +100,8 @@ ehthumbs.db
 Thumbs.db
 
 .mcp.json
+
+# Rollout reports
+rollout-health-*.json
+rollback-report-*.json
+verification-*.json
