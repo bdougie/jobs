@@ -1,0 +1,18 @@
+{
+  "name": "rollout-scripts",
+  "version": "1.0.0",
+  "description": "Rollout management scripts for feature flag control",
+  "private": true,
+  "type": "module",
+  "scripts": {
+    "rollout": "tsx rollout-manager.ts"
+  },
+  "dependencies": {
+    "@supabase/supabase-js": "^2.45.0"
+  },
+  "devDependencies": {
+    "@types/node": "^22.0.0",
+    "tsx": "^4.20.3",
+    "typescript": "^5.0.0"
+  }
+}
