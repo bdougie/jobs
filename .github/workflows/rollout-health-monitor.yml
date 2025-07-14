@@ -49,8 +49,6 @@ jobs:
           GITHUB_TOKEN: ${{ steps.app-token.outputs.token }}
           SUPABASE_URL: ${{ secrets.SUPABASE_URL }}
           SUPABASE_SERVICE_KEY: ${{ secrets.SUPABASE_SERVICE_KEY }}
-          SENTRY_DSN: ${{ secrets.SENTRY_DSN }}
-          SENTRY_AUTH_TOKEN: ${{ secrets.SENTRY_AUTH_TOKEN }}
           CHECK_TYPE: ${{ inputs.check_type || 'full' }}
           FORCE_CHECK: ${{ inputs.force_check || 'false' }}
           ENVIRONMENT: 'production'

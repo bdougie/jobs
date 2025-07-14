@@ -136,10 +136,11 @@ jobs:
               // Could post to Slack, Discord, or create a discussion here
             }
             
-      - name: Alert on performance degradation
+      - name: Create issue for performance degradation
         if: failure()
         run: node scripts/rollout/alert-manager.js
         env:
-          SENTRY_DSN: ${{ secrets.SENTRY_DSN }}
+          GITHUB_TOKEN: ${{ steps.app-token.outputs.token }}
           ALERT_TYPE: 'dashboard_generation_failed'
           ENVIRONMENT: 'production'
+          ROLLBACK_REASON: 'Dashboard generation failed'
